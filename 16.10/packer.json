@@ -1,0 +1,74 @@
+{
+    "description": "Packer template to create a Vagrant box for {{ user `box_name` }}",
+    "builders": [{
+        "type": "virtualbox-iso",
+        "guest_os_type": "Ubuntu_64",
+        "headless": "true",
+        "disk_size": "81920",
+
+        "boot_command": [
+            "<enter><wait>",
+            "<f6><esc>",
+            "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+            "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+            "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+            "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+            "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+            "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+            "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+            "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+            "<bs><bs><bs>",
+            "/install/vmlinuz ",
+            "auto-install/enable=true ",
+            "debconf/priority=critical ",
+            "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/preseed.cfg ",
+            "initrd=/install/initrd.gz ",
+            "<enter>"
+        ],
+        "boot_wait": "10s",
+
+        "iso_urls": [
+            "http://releases.ubuntu.com/16.10/ubuntu-16.10-server-amd64.iso"
+        ],
+        "iso_checksum_type": "md5",
+        "iso_checksum": "7d6de832aee348bacc894f0a2ab1170d",
+
+        "ssh_username": "vagrant",
+        "ssh_password": "vagrant",
+        "ssh_port": 22,
+        "ssh_timeout": "10000s",
+
+        "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
+
+        "http_directory": "{{ template_dir }}/http",
+        "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+
+        "vboxmanage": [
+            [
+                "modifyvm",
+                "{{.Name}}",
+                "--memory",
+                "1024"
+            ],
+            [
+                "modifyvm",
+                "{{.Name}}",
+                "--cpus",
+                "1"
+            ]
+        ]
+    }],
+    "provisioners": [{
+        "type": "shell",
+        "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+        "scripts": [
+            "{{ template_dir }}/scripts/setup.sh",
+            "{{ template_dir }}/scripts/{{ build_type }}-guest-additions.sh",
+            "{{ template_dir }}/scripts/cleanup.sh"
+        ]
+    }],
+    "post-processors": [{
+        "output": "{{ template_dir }}/boxes/{{ .Provider }}/{{ user `box_name` }}.box",
+        "type": "vagrant"
+    }]
+}

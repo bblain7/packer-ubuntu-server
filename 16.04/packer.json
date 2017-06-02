@@ -28,10 +28,10 @@
         "boot_wait": "10s",
 
         "iso_urls": [
-            "{{ user `iso_url` }}"
+            "http://releases.ubuntu.com/16.04/ubuntu-16.04.2-server-amd64.iso"
         ],
-        "iso_checksum_type": "{{ user `iso_checksum_type` }}",
-        "iso_checksum": "{{ user `iso_checksum` }}",
+        "iso_checksum_type": "md5",
+        "iso_checksum": "2bce60d18248df9980612619ff0b34e6",
 
         "ssh_username": "vagrant",
         "ssh_password": "vagrant",

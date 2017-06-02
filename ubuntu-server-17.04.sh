@@ -2,7 +2,7 @@
 
 dir=$(dirname "$(readlink -f "$0")")
 vm_provider="virtualbox"
-version="16.04"
+version="17.04"
 box_name="ubuntu-server-${version}"
 
 packer build -var "box_name=${box_name}" "${dir}/${version}/packer.json" || {
