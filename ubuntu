@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+version="17.10"
+debug=""
+force=""
+vm_provider="virtualbox"
+
+
+getopt --test > /dev/null
+if [[ $? -ne 4 ]]; then
+    echo "Script is unable to execute. `getopt --test` failed in this environment."
+    exit 1
+fi
+
+options=dfv:
+long_options=debug,force,version:
+
+# -temporarily store output to be able to check for errors
+# -e.g. use “--options” parameter by name to activate quoting/enhanced mode
+# -pass arguments only via   -- "$@"   to separate them correctly
+parsed_options=$(getopt --options=${options} --longoptions=${long_options} --name "$0" -- "$@")
+
+# e.g. $? == 1
+# then getopt has complained about wrong arguments to stdout
+# display the usage
+if [[ $? -ne 0 ]]; then
+
+  # TODO: not sure how to make this wrapped columns
+  printf "%s%s\n" "usage: $(basename "$0")" "[-h | --help] [-d | --debug] [-f | --force] [-v | --version]" | fold -sw 80
+
+  exit 2
+fi
+
+
+# read getopt’s output this way to handle the quoting right:
+eval set -- "${parsed_options}"
+
+# now enjoy the options in order and nicely split until we see --
+while true; do
+  case "$1" in
+    -d|--debug)
+      debug=" -debug"
+      shift
+      ;;
+    -f|--force)
+      force=" -force"
+      shift
+      ;;
+    -v|--version)
+      version="$2"
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "Help $1"
+      exit 3
+      ;;
+  esac
+done
+
+
+dir=$(dirname "$(readlink -f "$0")")
+box_name="ubuntu-server-${version}"
+
+if [[ $debug = "true" ]]; then
+  echo "Building Vagrant box for ${box_name}"
+fi
+
+packer build -var "box_name=${box_name}" "${dir}/${version}/packer.json" || {
+  echo "Packer failed to create Vagrant box.";
+  exit 1;
+}
+
+
+if [[ $debug = "true" ]]; then
+  echo "Adding ${USER}/${box_name} Vagrant box."
+fi
+
+vagrant box add --force "${USER}/${box_name}" "${dir}/${version}/boxes/${vm_provider}/${box_name}.box" || {
+  echo "Vagrant failed to add box.";
+  exit 1;
+}
